@@ -81,6 +81,10 @@ register_activation_hook(__FILE__, function () {
         url VARCHAR(255),
         domain VARCHAR(255),
         tier INT DEFAULT 3,
+        crawl_scope ENUM('entire_site', 'subpages_only', 'specific_paths') DEFAULT 'entire_site',
+        subpage_keywords TEXT NULL,
+        path_patterns TEXT NULL,
+        subpage_depth INT DEFAULT 5,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) $charset;";
     $sql5 = "CREATE TABLE $blocked_domains_table (
@@ -163,6 +167,27 @@ register_activation_hook(__FILE__, function () {
                 ['domain' => $domain]
             );
         }
+    }
+
+    // Add new subpage crawling columns to domains table if they don't exist
+    $crawl_scope_column = $wpdb->get_results("SHOW COLUMNS FROM $domains_table LIKE 'crawl_scope'");
+    if (empty($crawl_scope_column)) {
+        $wpdb->query("ALTER TABLE $domains_table ADD COLUMN crawl_scope ENUM('entire_site', 'subpages_only', 'specific_paths') DEFAULT 'entire_site'");
+    }
+    
+    $subpage_keywords_column = $wpdb->get_results("SHOW COLUMNS FROM $domains_table LIKE 'subpage_keywords'");
+    if (empty($subpage_keywords_column)) {
+        $wpdb->query("ALTER TABLE $domains_table ADD COLUMN subpage_keywords TEXT NULL");
+    }
+    
+    $path_patterns_column = $wpdb->get_results("SHOW COLUMNS FROM $domains_table LIKE 'path_patterns'");
+    if (empty($path_patterns_column)) {
+        $wpdb->query("ALTER TABLE $domains_table ADD COLUMN path_patterns TEXT NULL");
+    }
+    
+    $subpage_depth_column = $wpdb->get_results("SHOW COLUMNS FROM $domains_table LIKE 'subpage_depth'");
+    if (empty($subpage_depth_column)) {
+        $wpdb->query("ALTER TABLE $domains_table ADD COLUMN subpage_depth INT DEFAULT 5");
     }
 
 });
@@ -868,6 +893,10 @@ add_action('wp_ajax_ai_add_website', function() {
     $title = sanitize_text_field($_POST['title'] ?? '');
     $url = esc_url_raw($_POST['url'] ?? '');
     $tier = intval($_POST['tier'] ?? 3); // Default to tier 3 if not specified
+    $crawl_scope = sanitize_text_field($_POST['crawl_scope'] ?? 'entire_site');
+    $subpage_keywords = sanitize_textarea_field($_POST['subpage_keywords'] ?? '');
+    $path_patterns = sanitize_textarea_field($_POST['path_patterns'] ?? '');
+    $subpage_depth = intval($_POST['subpage_depth'] ?? 5);
     
     if (empty($title) || empty($url)) {
         wp_send_json(['notice' => '<div class="notice notice-error"><p>Title and URL are required.</p></div>']);
@@ -877,15 +906,37 @@ add_action('wp_ajax_ai_add_website', function() {
         wp_send_json(['notice' => '<div class="notice notice-error"><p>Tier must be between 1 and 4.</p></div>']);
     }
     
+    if (!in_array($crawl_scope, ['entire_site', 'subpages_only', 'specific_paths'])) {
+        wp_send_json(['notice' => '<div class="notice notice-error"><p>Invalid crawl scope.</p></div>']);
+    }
+    
+    if ($subpage_depth < 1 || $subpage_depth > 100) {
+        wp_send_json(['notice' => '<div class="notice notice-error"><p>Subpage depth must be between 1 and 100.</p></div>']);
+    }
+    
+    // Validate path patterns to prevent overly broad crawling
+    if ($crawl_scope === 'specific_paths' && !empty($path_patterns)) {
+        $patterns = array_map('trim', explode(',', $path_patterns));
+        foreach ($patterns as $pattern) {
+            if (strlen($pattern) < 3 || $pattern === '/*' || $pattern === '/' || $pattern === '*') {
+                wp_send_json(['notice' => '<div class="notice notice-error"><p>Path pattern "' . esc_html($pattern) . '" is too broad. Use specific patterns like /r/subreddit/* or /section/article/*</p></div>']);
+            }
+        }
+    }
+    
     $domain = ai_trainer_extract_domain($url);
     $wpdb->insert($wpdb->prefix . 'ai_allowed_domains', [
         'title' => $title,
         'url' => $url,
         'domain' => $domain,
         'tier' => $tier,
+        'crawl_scope' => $crawl_scope,
+        'subpage_keywords' => $subpage_keywords,
+        'path_patterns' => $path_patterns,
+        'subpage_depth' => $subpage_depth,
         'created_at' => current_time('mysql')
     ]);
-    wp_send_json(['notice' => '<div class="notice notice-success"><p>Website added with tier ' . $tier . '.</p></div>']);
+    wp_send_json(['notice' => '<div class="notice notice-success"><p>Website added with tier ' . $tier . ' and ' . str_replace('_', ' ', $crawl_scope) . ' crawling.</p></div>']);
 });
 
 add_action('wp_ajax_ai_edit_website', function() {
@@ -895,6 +946,10 @@ add_action('wp_ajax_ai_edit_website', function() {
     $title = sanitize_text_field($_POST['title'] ?? '');
     $url = esc_url_raw($_POST['url'] ?? '');
     $tier = intval($_POST['tier'] ?? 3);
+    $crawl_scope = sanitize_text_field($_POST['crawl_scope'] ?? 'entire_site');
+    $subpage_keywords = sanitize_textarea_field($_POST['subpage_keywords'] ?? '');
+    $path_patterns = sanitize_textarea_field($_POST['path_patterns'] ?? '');
+    $subpage_depth = intval($_POST['subpage_depth'] ?? 5);
     
     if ($id <= 0 || empty($title) || empty($url)) {
         wp_send_json(['notice' => '<div class="notice notice-error"><p>Invalid data.</p></div>']);
@@ -904,14 +959,36 @@ add_action('wp_ajax_ai_edit_website', function() {
         wp_send_json(['notice' => '<div class="notice notice-error"><p>Tier must be between 1 and 4.</p></div>']);
     }
     
+    if (!in_array($crawl_scope, ['entire_site', 'subpages_only', 'specific_paths'])) {
+        wp_send_json(['notice' => '<div class="notice notice-error"><p>Invalid crawl scope.</p></div>']);
+    }
+    
+    if ($subpage_depth < 1 || $subpage_depth > 100) {
+        wp_send_json(['notice' => '<div class="notice notice-error"><p>Subpage depth must be between 1 and 100.</p></div>']);
+    }
+    
+    // Validate path patterns to prevent overly broad crawling
+    if ($crawl_scope === 'specific_paths' && !empty($path_patterns)) {
+        $patterns = array_map('trim', explode(',', $path_patterns));
+        foreach ($patterns as $pattern) {
+            if (strlen($pattern) < 3 || $pattern === '/*' || $pattern === '/' || $pattern === '*') {
+                wp_send_json(['notice' => '<div class="notice notice-error"><p>Path pattern "' . esc_html($pattern) . '" is too broad. Use specific patterns like /r/subreddit/* or /section/article/*</p></div>']);
+            }
+        }
+    }
+    
     $domain = ai_trainer_extract_domain($url);
     $wpdb->update($wpdb->prefix . 'ai_allowed_domains', [
         'title' => $title,
         'url' => $url,
         'domain' => $domain,
-        'tier' => $tier
+        'tier' => $tier,
+        'crawl_scope' => $crawl_scope,
+        'subpage_keywords' => $subpage_keywords,
+        'path_patterns' => $path_patterns,
+        'subpage_depth' => $subpage_depth
     ], ['id' => $id]);
-    wp_send_json(['notice' => '<div class="notice notice-success"><p>Website updated with tier ' . $tier . '.</p></div>']);
+    wp_send_json(['notice' => '<div class="notice notice-success"><p>Website updated with tier ' . $tier . ' and ' . str_replace('_', ' ', $crawl_scope) . ' crawling.</p></div>']);
 });
 
 add_action('wp_ajax_ai_delete_website', function() {
@@ -931,9 +1008,14 @@ add_action('wp_ajax_ai_get_website_table', function() {
     $websites = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ai_allowed_domains ORDER BY tier ASC, domain ASC", ARRAY_A);
     ob_start();
     echo '<table class="widefat striped">';
-    echo '<thead><tr><th>Title</th><th>URL</th><th>Domain</th><th>Tier</th><th>Actions</th></tr></thead><tbody>';
+    echo '<thead><tr><th>Title</th><th>URL</th><th>Domain</th><th>Tier</th><th>Crawl Scope</th><th>Actions</th></tr></thead><tbody>';
     foreach ($websites as $site) {
         $tier = isset($site['tier']) ? intval($site['tier']) : 3;
+        $crawl_scope = isset($site['crawl_scope']) ? $site['crawl_scope'] : 'entire_site';
+        $subpage_keywords = isset($site['subpage_keywords']) ? $site['subpage_keywords'] : '';
+        $path_patterns = isset($site['path_patterns']) ? $site['path_patterns'] : '';
+        $subpage_depth = isset($site['subpage_depth']) ? intval($site['subpage_depth']) : 5;
+        
         echo '<tr data-id="' . esc_attr($site['id']) . '">';
         echo '<td class="website-title">' . esc_html($site['title']) . '</td>';
         echo '<td class="website-url"><a href="' . esc_url($site['url']) . '" target="_blank">' . esc_html($site['url']) . '</a></td>';
@@ -947,8 +1029,25 @@ add_action('wp_ajax_ai_get_website_table', function() {
         ];
         echo '<span class="tier-' . $tier . '">' . $tier_labels[$tier] . '</span>';
         echo '</td>';
+        echo '<td class="website-crawl-scope">';
+        $scope_labels = [
+            'entire_site' => 'Entire Site',
+            'subpages_only' => 'Subpages Only',
+            'specific_paths' => 'Specific Paths'
+        ];
+        echo '<span class="crawl-scope-' . $crawl_scope . '">' . $scope_labels[$crawl_scope] . '</span>';
+        if ($crawl_scope === 'subpages_only' && !empty($subpage_keywords)) {
+            echo '<br><small>Keywords: ' . esc_html($subpage_keywords) . '</small>';
+        }
+        if ($crawl_scope === 'specific_paths' && !empty($path_patterns)) {
+            echo '<br><small>Patterns: ' . esc_html($path_patterns) . '</small>';
+        }
+        if ($crawl_scope !== 'entire_site') {
+            echo '<br><small>Depth: ' . $subpage_depth . ' subpages</small>';
+        }
+        echo '</td>';
         echo '<td class="actionsWrapper">';
-        echo '<button type="button" class="button button-small edit-website-inline" data-id="' . esc_attr($site['id']) . '" data-title="' . esc_attr($site['title']) . '" data-url="' . esc_attr($site['url']) . '" data-tier="' . esc_attr($tier) . '">Edit</button> ';
+        echo '<button type="button" class="button button-small edit-website-inline" data-id="' . esc_attr($site['id']) . '" data-title="' . esc_attr($site['title']) . '" data-url="' . esc_attr($site['url']) . '" data-tier="' . esc_attr($tier) . '" data-crawl-scope="' . esc_attr($crawl_scope) . '" data-subpage-keywords="' . esc_attr($subpage_keywords) . '" data-path-patterns="' . esc_attr($path_patterns) . '" data-subpage-depth="' . esc_attr($subpage_depth) . '">Edit</button> ';
         echo '<a href="#" class="button button-small button-link-delete delete-website" data-id="' . esc_attr($site['id']) . '">Delete</a>';
         echo '</td></tr>';
     }

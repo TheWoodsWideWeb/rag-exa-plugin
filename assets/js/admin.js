@@ -47,21 +47,25 @@ jQuery(function ($) {
     $(document).on('submit', '#add-website-form', function (e) {
         e.preventDefault();
         var data = {
-            action: 'ai_add_domain_with_tier',
+            action: 'ai_add_website',
             title: $(this).find('[name="website_title"]').val(),
             url: $(this).find('[name="website_url"]').val(),
             tier: $(this).find('[name="website_tier"]').val(),
+            crawl_scope: $(this).find('[name="crawl_scope"]').val(),
+            subpage_depth: $(this).find('[name="subpage_depth"]').val(),
+            subpage_keywords: $(this).find('[name="subpage_keywords"]').val(),
+            path_patterns: $(this).find('[name="path_patterns"]').val(),
             nonce: ai_trainer_ajax.nonce
         };
         $.post(ai_trainer_ajax.ajaxurl, data, function (response) {
-            if (response.success) {
-                $('#website-notices').html('<div class="notice notice-success"><p>' + response.data.message + '</p></div>').show();
-            } else {
-                $('#website-notices').html('<div class="notice notice-error"><p>' + response.data.message + '</p></div>').show();
+            if (response.notice) {
+                $('#website-notices').html(response.notice).show();
+                setTimeout(function() { $('#website-notices').fadeOut(); }, 3000);
             }
-            setTimeout(function() { $('#website-notices').fadeOut(); }, 3000);
             reloadWebsiteTable();
             $('#add-website-form')[0].reset();
+            // Reset form field visibility
+            $('#crawl_scope').trigger('change');
         }, 'json');
     });
 
@@ -71,6 +75,14 @@ jQuery(function ($) {
         $('#edit-website-title').val($(this).data('title'));
         $('#edit-website-url').val($(this).data('url'));
         $('#edit-website-tier').val($(this).data('tier'));
+        $('#edit-crawl-scope').val($(this).data('crawl-scope'));
+        $('#edit-subpage-depth').val($(this).data('subpage-depth'));
+        $('#edit-subpage-keywords').val($(this).data('subpage-keywords'));
+        $('#edit-path-patterns').val($(this).data('path-patterns'));
+        
+        // Trigger form field dependencies
+        $('#edit-crawl-scope').trigger('change');
+        
         $('#website-edit-modal').show();
     });
     // Close Edit Modal
@@ -86,6 +98,10 @@ jQuery(function ($) {
             title: $('#edit-website-title').val(),
             url: $('#edit-website-url').val(),
             tier: $('#edit-website-tier').val(),
+            crawl_scope: $('#edit-crawl-scope').val(),
+            subpage_depth: $('#edit-subpage-depth').val(),
+            subpage_keywords: $('#edit-subpage-keywords').val(),
+            path_patterns: $('#edit-path-patterns').val(),
             nonce: ai_trainer_ajax.nonce
         };
         $.post(ai_trainer_ajax.ajaxurl, data, function (response) {
