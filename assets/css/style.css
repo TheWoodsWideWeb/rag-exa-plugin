@@ -1076,6 +1076,19 @@
     font-weight: 500;
 }
 
+/* Share button centering */
+.share-btn.modern {
+    justify-content: center !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.action-buttons {
+    justify-content: center !important;
+    display: flex !important;
+}
+
 .reaction-like-svg, .reaction-dislike-svg {
     color: #9ca3af; /* Tailwind gray-400 */
     fill: #9ca3af;
@@ -1559,5 +1572,17 @@
         padding: 6px 10px !important;
         font-size: 12px !important;
         min-height: 32px !important;
+    }
+    
+    /* Share button centering on mobile */
+    .share-btn.modern {
+        justify-content: center !important;
+        text-align: center !important;
+        width: auto !important;
+        min-width: 80px !important;
+    }
+    
+    .action-buttons {
+        justify-content: center !important;
     }
 }

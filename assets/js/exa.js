@@ -800,10 +800,11 @@ jQuery(document).ready(function($) {
         // Create the modern feedback container with share button
         const feedbackContainer = $(`
             <div class="modern-feedback-wrapper" style="margin-top: 20px;">
-                <div class="action-buttons" style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <div class="action-buttons" style="display: flex; justify-content: center; margin-bottom: 16px;">
                     <button class="share-btn modern" data-id="${chatlogId}" style="
                         display: flex;
                         align-items: center;
+                        justify-content: center;
                         gap: 6px;
                         padding: 8px 16px;
                         border: 1.5px solid rgba(255, 255, 255, 0.2);
@@ -815,6 +816,8 @@ jQuery(document).ready(function($) {
                         cursor: pointer;
                         transition: all 0.2s ease;
                         backdrop-filter: blur(10px);
+                        text-align: center;
+                        min-width: 80px;
                     ">
                         ${shareSVG}
                         <span>Share</span>
