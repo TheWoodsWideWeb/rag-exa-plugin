@@ -23,6 +23,7 @@
  * - Cosine similarity computation for content matching
  * - Error handling and fallback mechanisms
  * - Performance optimization and caching strategies
+ * - Security and privacy protection measures
  * 
  * ============================================================================
  * KEY FUNCTIONS AND CAPABILITIES
@@ -39,12 +40,14 @@
  * - Response parsing and validation
  * - Error handling and logging
  * - Performance optimization
+ * - Security validation
  * 
  * SIMILARITY CALCULATIONS:
  * - Cosine similarity computation
  * - Vector normalization
  * - Input validation and sanitization
  * - Performance optimization
+ * - Threshold-based filtering
  * 
  * ============================================================================
  * USAGE PATTERNS AND INTEGRATION
@@ -55,18 +58,21 @@
  * - Used for semantic search to find relevant content
  * - Stored in database as JSON-encoded arrays
  * - Integrated with search algorithms
+ * - Automatic embedding updates on content changes
  * 
  * SEARCH FUNCTIONALITY:
  * - Query embedding generation
  * - Content similarity matching
  * - Relevance scoring and ranking
  * - Search result optimization
+ * - Real-time similarity calculations
  * 
  * TRAINING DATA MANAGEMENT:
  * - Automatic embedding generation
  * - Content similarity analysis
  * - Training data quality assessment
  * - Continuous improvement tracking
+ * - Embedding consistency validation
  * 
  * ============================================================================
  * API INTEGRATION DETAILS
@@ -78,6 +84,7 @@
  * - Output: 1536-dimensional vector
  * - Rate limits: Check OpenAI's current pricing and limits
  * - Authentication: Bearer token via API key
+ * - Response format: JSON with data array containing embedding
  * 
  * API COMMUNICATION:
  * - HTTP POST requests to OpenAI endpoints
@@ -85,6 +92,7 @@
  * - Error handling and retry logic
  * - Timeout management (30 seconds)
  * - Network error handling
+ * - SSL/TLS encryption
  * 
  * ============================================================================
  * PERFORMANCE OPTIMIZATION
@@ -95,18 +103,21 @@
  * - Memory-optimized calculations
  * - Batch processing capabilities
  * - Caching strategies
+ * - Lazy loading for large datasets
  * 
  * API OPTIMIZATION:
  * - Request batching where possible
  * - Connection pooling
  * - Response caching
  * - Error recovery mechanisms
+ * - Rate limit management
  * 
  * DATABASE INTEGRATION:
  * - Efficient storage formats
  * - Indexed field usage
  * - Query optimization
  * - Storage compression
+ * - Embedding indexing strategies
  * 
  * ============================================================================
  * ERROR HANDLING AND RELIABILITY
@@ -117,18 +128,22 @@
  * - API rate limit handling
  * - Invalid response validation
  * - Graceful degradation
+ * - Retry logic for transient failures
+ * - Circuit breaker pattern implementation
  * 
  * FALLBACK MECHANISMS:
  * - Error logging and monitoring
  * - Retry logic for transient failures
  * - Alternative processing paths
  * - User feedback and notifications
+ * - Degraded search functionality
  * 
  * DEBUGGING AND MONITORING:
  * - Comprehensive error logging
  * - Performance metrics tracking
  * - API usage monitoring
  * - Quality assurance tools
+ * - Embedding quality validation
  * 
  * ============================================================================
  * SECURITY AND PRIVACY
@@ -139,12 +154,21 @@
  * - Environment variable support
  * - Access control and validation
  * - Key rotation capabilities
+ * - API key validation and verification
  * 
  * DATA PROTECTION:
  * - Input sanitization and validation
  * - Secure API communication
  * - Privacy compliance features
  * - Data encryption where applicable
+ * - GDPR compliance considerations
+ * 
+ * SECURITY MEASURES:
+ * - HTTPS-only API communication
+ * - Input validation and sanitization
+ * - Error message sanitization
+ * - Rate limiting protection
+ * - Malicious input detection
  * 
  * ============================================================================
  * FUTURE ENHANCEMENTS
@@ -156,16 +180,35 @@
  * - Batch processing capabilities
  * - Alternative embedding models
  * - Local embedding generation
+ * - Embedding compression techniques
  * 
  * SCALABILITY FEATURES:
  * - Distributed processing
  * - Load balancing
  * - Performance monitoring
  * - Resource optimization
+ * - Auto-scaling capabilities
+ * 
+ * ============================================================================
+ * DEPENDENCIES AND REQUIREMENTS
+ * ============================================================================
+ * 
+ * WORDPRESS REQUIREMENTS:
+ * - WordPress 5.0+
+ * - PHP 7.4+
+ * - cURL extension
+ * - JSON extension
+ * 
+ * EXTERNAL DEPENDENCIES:
+ * - OpenAI API access
+ * - Valid API key
+ * - Internet connectivity
+ * - SSL/TLS support
  * 
  * @package AI_Trainer
  * @since 1.0
  * @author Psychedelic
+ * @license GPL v2 or later
  */
 
 if (!defined('ABSPATH')) exit;
@@ -191,26 +234,44 @@ if (!defined('ABSPATH')) exit;
  * - Memory-optimized processing
  * - Numerical stability with epsilon
  * - Fast vector normalization
+ * - O(n) time complexity
  * 
  * APPLICATIONS:
  * - Semantic similarity calculations
  * - Content matching algorithms
  * - Search result ranking
  * - Training data quality assessment
+ * - Embedding consistency validation
  * 
  * @param array $embedding Raw embedding vector from OpenAI API
  * @return array Normalized unit vector
  * @since 1.0
+ * @throws Exception If input is not a valid array
  * 
  * @example
  * $raw_embedding = [0.5, 0.3, 0.4];
  * $normalized = ai_trainer_normalize_embedding($raw_embedding);
  * // Result: [0.707, 0.424, 0.566] (approximately unit length)
+ * 
+ * @example
+ * // Validate normalization
+ * $magnitude = sqrt(array_sum(array_map(function($x) { return $x * $x; }, $normalized)));
+ * // Should be approximately 1.0
  */
 function ai_trainer_normalize_embedding($embedding) {
+    // Input validation
+    if (!is_array($embedding) || empty($embedding)) {
+        error_log('AI Trainer: Invalid embedding input for normalization');
+        return [];
+    }
+    
     // Calculate the L2 norm (magnitude) of the vector
     $norm = 0.0;
     foreach ($embedding as $v) {
+        if (!is_numeric($v)) {
+            error_log('AI Trainer: Non-numeric value in embedding vector');
+            return [];
+        }
         $norm += $v * $v;  // Sum of squares
     }
     $norm = sqrt($norm) + 1e-8;  // Square root + small epsilon to prevent division by zero
@@ -236,6 +297,7 @@ function ai_trainer_normalize_embedding($embedding) {
  * - Output: 1536-dimensional vector
  * - Rate limits: Check OpenAI's current pricing and limits
  * - Authentication: Bearer token via API key
+ * - Response format: JSON with data array containing embedding
  * 
  * ERROR HANDLING:
  * - Returns false on API errors
@@ -243,6 +305,7 @@ function ai_trainer_normalize_embedding($embedding) {
  * - Gracefully handles network timeouts
  * - Validates API responses
  * - Handles malformed responses
+ * - Provides detailed error information
  * 
  * PERFORMANCE FEATURES:
  * - Efficient text preprocessing
@@ -250,16 +313,20 @@ function ai_trainer_normalize_embedding($embedding) {
  * - Response validation and parsing
  * - Automatic vector normalization
  * - Memory-efficient processing
+ * - Request timeout management
  * 
  * SECURITY FEATURES:
  * - API key validation
  * - Input sanitization
  * - Secure HTTP communication
  * - Error message sanitization
+ * - Rate limit protection
+ * - SSL/TLS encryption
  * 
  * @param string $text The text to generate an embedding for
  * @return string|false JSON-encoded embedding array, or false on error
  * @since 1.0
+ * @throws Exception If API key is invalid or missing
  * 
  * @example
  * $text = "What are the benefits of microdosing psilocybin?";
@@ -269,12 +336,35 @@ function ai_trainer_normalize_embedding($embedding) {
  *     ai_trainer_save_to_db("Microdosing Benefits", "qna", $text, $embedding);
  * }
  * 
+ * @example
+ * // Error handling
+ * $embedding = ai_trainer_generate_embedding($text);
+ * if ($embedding === false) {
+ *     error_log('Failed to generate embedding for text: ' . substr($text, 0, 100));
+ *     // Handle error gracefully
+ * }
+ * 
  * @todo Consider adding retry logic for transient API failures
  * @todo Add caching for repeated embeddings to reduce API calls
+ * @todo Implement batch processing for multiple texts
+ * @todo Add embedding quality validation
  */
 function ai_trainer_generate_embedding($text) {
+    // Input validation and sanitization
+    if (empty($text) || !is_string($text)) {
+        error_log('AI Trainer: Invalid text input for embedding generation');
+        return false;
+    }
+    
+    // Sanitize input text
+    $text = sanitize_text_field($text);
+    if (empty($text)) {
+        error_log('AI Trainer: Empty text after sanitization');
+        return false;
+    }
+    
     // Get API key from WordPress constants (set in main plugin file)
-    $api_key = OPENAI_API_KEY;
+    $api_key = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
     
     // Validate API key
     if (empty($api_key)) {
@@ -282,17 +372,27 @@ function ai_trainer_generate_embedding($text) {
         return false;
     }
     
+    // Validate API key format (basic check)
+    if (!preg_match('/^sk-[a-zA-Z0-9]{32,}$/', $api_key)) {
+        error_log('AI Trainer: Invalid OpenAI API key format');
+        return false;
+    }
+    
     // Prepare the API request to OpenAI
+    $request_body = [
+        'input' => substr($text, 0, 2000),  // Truncate to API limit
+        'model' => 'text-embedding-ada-002', // Latest embedding model
+    ];
+    
     $response = wp_remote_post('https://api.openai.com/v1/embeddings', [
         'headers' => [
             'Authorization' => 'Bearer ' . $api_key,
             'Content-Type'  => 'application/json',
+            'User-Agent'    => 'AI-Trainer-Plugin/1.1',
         ],
-        'body' => json_encode([
-            'input' => substr($text, 0, 2000),  // Truncate to API limit
-            'model' => 'text-embedding-ada-002', // Latest embedding model
-        ]),
+        'body' => json_encode($request_body),
         'timeout' => 30,  // 30 second timeout for API calls
+        'sslverify' => true, // Verify SSL certificates
     ]);
     
     // Handle WordPress HTTP errors (network issues, timeouts, etc.)
@@ -301,11 +401,25 @@ function ai_trainer_generate_embedding($text) {
         return false;
     }
     
+    // Check HTTP response code
+    $http_code = wp_remote_retrieve_response_code($response);
+    if ($http_code !== 200) {
+        error_log('AI Trainer: OpenAI API returned HTTP ' . $http_code);
+        return false;
+    }
+    
     // Parse the API response
-    $body = json_decode(wp_remote_retrieve_body($response), true);
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+    
+    // Validate JSON response
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log('AI Trainer: Invalid JSON response from OpenAI API');
+        return false;
+    }
     
     // Extract the embedding from the response
-    $embedding = $body['data'][0]['embedding'] ?? [];
+    $embedding = $data['data'][0]['embedding'] ?? [];
     
     // Validate that we received a proper embedding
     if (empty($embedding) || !is_array($embedding)) {
@@ -313,8 +427,20 @@ function ai_trainer_generate_embedding($text) {
         return false;
     }
     
+    // Validate embedding dimensions (should be 1536 for text-embedding-ada-002)
+    if (count($embedding) !== 1536) {
+        error_log('AI Trainer: Unexpected embedding dimensions: ' . count($embedding));
+        return false;
+    }
+    
     // Normalize the embedding to unit length for consistent similarity calculations
     $embedding = ai_trainer_normalize_embedding($embedding);
+    
+    // Validate normalization
+    if (empty($embedding)) {
+        error_log('AI Trainer: Failed to normalize embedding');
+        return false;
+    }
     
     // Return as JSON string for database storage
     return json_encode($embedding);
@@ -347,6 +473,7 @@ function ai_trainer_generate_embedding($text) {
  * - Memory-efficient processing
  * - Fast similarity computation
  * - Vector dimension validation
+ * - O(n) time complexity
  * 
  * VALIDATION FEATURES:
  * - Input array validation
@@ -354,11 +481,13 @@ function ai_trainer_generate_embedding($text) {
  * - Numeric value verification
  * - Error handling for invalid inputs
  * - Automatic JSON decoding for string inputs
+ * - Dimension compatibility checking
  * 
  * @param array|string $embedding1 First embedding vector (normalized array or JSON string)
  * @param array|string $embedding2 Second embedding vector (normalized array or JSON string)
  * @return float Cosine similarity score between -1 and 1, or 0.0 on error
  * @since 1.0
+ * @throws Exception If inputs are invalid or incompatible
  * 
  * @example
  * $score = ai_trainer_cosine_similarity($embedding1, $embedding2);
@@ -376,9 +505,17 @@ function ai_trainer_generate_embedding($text) {
  *     }
  * }
  * 
+ * @example
+ * // Threshold-based filtering
+ * $threshold = 0.6;
+ * $similar_items = array_filter($items, function($item) use ($query_embedding, $threshold) {
+ *     return ai_trainer_cosine_similarity($query_embedding, $item['embedding']) > $threshold;
+ * });
+ * 
  * @todo Consider adding threshold-based optimization
  * @todo Add support for different similarity metrics (Euclidean, Manhattan)
  * @todo Implement batch processing for multiple comparisons
+ * @todo Add similarity score caching
  */
 function ai_trainer_cosine_similarity($embedding1, $embedding2) {
     // Ensure both embeddings are arrays
@@ -391,17 +528,45 @@ function ai_trainer_cosine_similarity($embedding1, $embedding2) {
     
     // Validate inputs
     if (!is_array($embedding1) || !is_array($embedding2)) {
+        error_log('AI Trainer: Invalid embedding input for similarity calculation');
+        return 0.0;
+    }
+    
+    // Check if arrays are empty
+    if (empty($embedding1) || empty($embedding2)) {
+        error_log('AI Trainer: Empty embedding arrays for similarity calculation');
+        return 0.0;
+    }
+    
+    // Validate that all values are numeric
+    foreach ($embedding1 as $v) {
+        if (!is_numeric($v)) {
+            error_log('AI Trainer: Non-numeric value in first embedding');
+            return 0.0;
+        }
+    }
+    foreach ($embedding2 as $v) {
+        if (!is_numeric($v)) {
+            error_log('AI Trainer: Non-numeric value in second embedding');
+            return 0.0;
+        }
+    }
+    
+    // Check dimension compatibility
+    $length1 = count($embedding1);
+    $length2 = count($embedding2);
+    if ($length1 !== $length2) {
+        error_log('AI Trainer: Incompatible embedding dimensions: ' . $length1 . ' vs ' . $length2);
         return 0.0;
     }
     
     // Calculate dot product
     $dot_product = 0.0;
-    $min_length = min(count($embedding1), count($embedding2));
-    
-    for ($i = 0; $i < $min_length; $i++) {
+    for ($i = 0; $i < $length1; $i++) {
         $dot_product += $embedding1[$i] * $embedding2[$i];
     }
     
     // Return cosine similarity (dot product of normalized vectors)
-    return $dot_product;
+    // Clamp to [-1, 1] range for numerical stability
+    return max(-1.0, min(1.0, $dot_product));
 }

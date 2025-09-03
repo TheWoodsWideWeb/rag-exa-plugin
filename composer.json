@@ -1,19 +1,36 @@
 {
     "name": "psychedelic/ai-trainer",
-    "description": "AI-powered knowledge base training system for WordPress with Exa.ai and OpenAI integration",
+    "description": "Advanced AI-powered knowledge base training system for WordPress with Exa.ai neural search and OpenAI integration for psychedelic substance information research and education",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "homepage": "https://github.com/samnguyen92/rag-exa-plugin",
+    "support": {
+        "issues": "https://github.com/samnguyen92/rag-exa-plugin/issues",
+        "source": "https://github.com/samnguyen92/rag-exa-plugin"
+    },
     "keywords": [
         "wordpress",
+        "wordpress-plugin",
         "ai",
+        "artificial-intelligence",
         "machine-learning",
         "knowledge-base",
         "openai",
         "exa-ai",
         "rag",
+        "retrieval-augmented-generation",
         "embeddings",
+        "semantic-search",
+        "psychedelics",
+        "substance-education",
+        "research-tools",
+        "neural-search",
+        "content-management",
+        "chatbot",
+        "ai-assistant",
         "pdf-parser",
-        "dotenv"
+        "dotenv",
+        "tinymce"
     ],
     "autoload": {
         "psr-4": {
@@ -23,19 +40,58 @@
     "authors": [
         {
             "name": "Sam Nguyen",
-            "email": "samnguyen4992@gmail.com"
+            "email": "samnguyen4992@gmail.com",
+            "role": "Lead Developer"
+        },
+        {
+            "name": "Psychedelic",
+            "email": "info@psychedelics.com",
+            "role": "Organization"
         }
     ],
     "require": {
+        "php": ">=7.4",
         "smalot/pdfparser": "^2.12",
         "vlucas/phpdotenv": "^5.6",
-        "tinymce/tinymce": "^8.0"
+        "tinymce/tinymce": "^8.0",
+        "graham-campbell/result-type": "^1.1"
     },
     "require-dev": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "phpunit/phpunit": "^9.0",
+        "squizlabs/php_codesniffer": "^3.0",
+        "phpstan/phpstan": "^1.0"
+    },
+    "suggest": {
+        "ext-curl": "Required for optimal API performance",
+        "ext-json": "Required for data processing",
+        "ext-mbstring": "Required for text processing",
+        "ext-tidy": "Optional for enhanced HTML cleaning"
     },
     "config": {
         "optimize-autoloader": true,
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    },
+    "extra": {
+        "installer-name": "ai-trainer",
+        "wordpress-plugin-info": {
+            "plugin-name": "AI Trainer Dashboard",
+            "plugin-uri": "https://psychedelics.com/ai-trainer",
+            "description": "Advanced AI-powered training dashboard with Exa.ai neural search and OpenAI integration",
+            "version": "1.1.0",
+            "author": "Psychedelic",
+            "author-uri": "https://psychedelics.com",
+            "license": "GPL-2.0-or-later",
+            "license-uri": "https://www.gnu.org/licenses/gpl-2.0.html",
+            "text-domain": "ai-trainer",
+            "domain-path": "/languages",
+            "network": false,
+            "requires": "5.0",
+            "tested": "6.4",
+            "requires-php": "7.4"
+        }
     }
 }

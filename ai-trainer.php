@@ -2,16 +2,24 @@
 
 /**
  * Plugin Name: AI Trainer Dashboard
- * Description: Training for Search AI.
+ * Description: Advanced AI-powered training dashboard with Exa.ai neural search and OpenAI integration for psychedelic substance information.
  * Version: 1.1
  * Author: Psychedelic
+ * License: GPL v2 or later
+ * Text Domain: ai-trainer
+ * Domain Path: /languages
+ * Requires at least: 5.0
+ * Tested up to: 6.4
+ * Requires PHP: 7.4
+ * Network: false
  */
 
 /**
  * AI Trainer Dashboard - WordPress Plugin
  * 
- * This plugin provides an AI-powered training dashboard that integrates with Exa.ai and OpenAI
- * to create a RAG (Retrieval-Augmented Generation) system for drug and substance information.
+ * A sophisticated AI-powered training dashboard that integrates Exa.ai neural search 
+ * with OpenAI embeddings to create a comprehensive RAG (Retrieval-Augmented Generation) 
+ * system for drug and substance information research and education.
  * 
  * ============================================================================
  * ARCHITECTURE OVERVIEW
@@ -31,34 +39,38 @@
  * 3. Admin Interface - Tabbed interface for managing all aspects
  * 4. AJAX Handlers - Real-time operations for all CRUD operations
  * 5. Content Processing - File uploads, text processing, embedding generation
+ * 6. HTML Tidy Integration - Professional HTML cleaning and formatting
  * 
  * ============================================================================
  * KEY FEATURES
  * ============================================================================
  * 
  * KNOWLEDGE MANAGEMENT:
- * - Q&A Management: Create, edit, and manage question-answer pairs
- * - File Processing: Upload and process PDF, TXT, and DOCX files
- * - Text Management: Add and manage custom text content
+ * - Q&A Management: Create, edit, and manage question-answer pairs for training
+ * - File Processing: Upload and process PDF, TXT, and DOCX files with embedding
+ * - Text Management: Add and manage custom text content with semantic search
  * - Website Management: Configure trusted content sources with priority tiers
  * 
  * AI-POWERED SEARCH:
- * - Exa.ai Integration: Neural search across configured domains
+ * - Exa.ai Integration: Neural search across configured domains with tier prioritization
  * - OpenAI Embeddings: Semantic similarity matching for local content
- * - Domain Prioritization: Tier-based content source management
- * - Content Guarantee: Ensures psychedelic.com content in every search
+ * - Domain Prioritization: Tier-based content source management (1=highest, 4=lowest)
+ * - Content Guarantee: Ensures psychedelics.com content in every search
+ * - Parallel Processing: Optimized search execution for maximum performance
  * 
  * ANALYTICS & MONITORING:
  * - CSAT Analytics: Customer satisfaction tracking with reaction system
  * - Chat Log Management: Complete conversation history and analytics
  * - Content Performance: Monitor search result quality and relevance
  * - Domain Performance: Track content source effectiveness
+ * - Off-topic Detection: Intelligent query classification using OpenAI
  * 
  * USER EXPERIENCE:
- * - Modern UI: Clean, responsive admin interface
+ * - Modern UI: Clean, responsive admin interface with dark theme
  * - Real-time Updates: AJAX-powered operations without page reloads
  * - Rich Text Editing: TinyMCE integration for content management
  * - Export Capabilities: CSV export for Q&A and text content
+ * - HTML Tidy Integration: Professional content cleaning and formatting
  * 
  * ============================================================================
  * DATABASE SCHEMA
@@ -66,65 +78,72 @@
  * 
  * CORE TABLES:
  * - ai_knowledge: Main knowledge base for training data
- *   - id: Primary key
- *   - title: Human-readable title
+ *   - id: Primary key (AUTO_INCREMENT)
+ *   - title: Human-readable title (VARCHAR(255))
  *   - source_type: Content type ('qna', 'file', 'text', 'website')
- *   - content: Main content or text
- *   - embedding: AI-generated embedding vector (JSON)
- *   - metadata: Additional data in JSON format
- *   - created_at: Timestamp
+ *   - content: Main content or text (LONGTEXT)
+ *   - embedding: AI-generated embedding vector (LONGTEXT JSON)
+ *   - metadata: Additional data in JSON format (LONGTEXT)
+ *   - created_at: Timestamp (DATETIME DEFAULT CURRENT_TIMESTAMP)
  * 
  * - ai_chat_log: User conversation history with reactions
- *   - id: Primary key
- *   - user_id: WordPress user ID (0 for anonymous)
- *   - question: User's question or query
- *   - answer: AI-generated response
- *   - reaction: JSON object with like/dislike counts
- *   - reaction_detail: Additional feedback text
- *   - psychedelics_com_included: Boolean flag
- *   - psychedelics_com_count: Number of results
- *   - psychedelics_com_guarantee_status: Guarantee compliance status
- *   - created_at: Timestamp
+ *   - id: Primary key (AUTO_INCREMENT)
+ *   - user_id: WordPress user ID (BIGINT UNSIGNED, 0 for anonymous)
+ *   - question: User's question or query (TEXT)
+ *   - answer: AI-generated response (LONGTEXT)
+ *   - reaction: JSON object with like/dislike counts (LONGTEXT)
+ *   - reaction_detail: Additional feedback text (TEXT)
+ *   - psychedelics_com_included: Boolean flag (TINYINT)
+ *   - psychedelics_com_count: Number of results (INT)
+ *   - psychedelics_com_guarantee_status: Guarantee compliance status (VARCHAR(50))
+ *   - psychedelics_com_guarantee_details: Detailed status information (TEXT)
+ *   - beta_feedback: Beta testing feedback (TEXT)
+ *   - created_at: Timestamp (DATETIME DEFAULT CURRENT_TIMESTAMP)
  * 
  * - ai_knowledge_chunks: Text chunks for better search granularity
- *   - id: Primary key
- *   - parent_id: Reference to main knowledge entry
- *   - source_type: Type of source
- *   - chunk_index: Order of chunk in original text
- *   - content: Chunk content
- *   - embedding: Chunk-specific embedding
- *   - metadata: Chunk metadata
- *   - created_at: Timestamp
+ *   - id: Primary key (AUTO_INCREMENT)
+ *   - parent_id: Reference to main knowledge entry (INT)
+ *   - source_type: Type of source (VARCHAR(50))
+ *   - chunk_index: Order of chunk in original text (INT)
+ *   - content: Chunk content (LONGTEXT)
+ *   - embedding: Chunk-specific embedding (LONGTEXT)
+ *   - metadata: Chunk metadata (LONGTEXT)
+ *   - created_at: Timestamp (DATETIME DEFAULT CURRENT_TIMESTAMP)
  * 
  * - ai_allowed_domains: Domain priorities and sources
- *   - id: Primary key
- *   - title: Human-readable domain name
- *   - url: Full URL
- *   - domain: Domain only (e.g., 'psychedelics.com')
- *   - tier: Priority tier (1=highest, 4=lowest)
- *   - created_at: Timestamp
+ *   - id: Primary key (AUTO_INCREMENT)
+ *   - title: Human-readable domain name (VARCHAR(255))
+ *   - url: Full URL (VARCHAR(255))
+ *   - domain: Domain only (VARCHAR(255))
+ *   - tier: Priority tier (1=highest, 4=lowest) (INT DEFAULT 3)
+ *   - created_at: Timestamp (DATETIME DEFAULT CURRENT_TIMESTAMP)
  * 
  * - ai_blocked_domains: Blocked content sources
- *   - id: Primary key
- *   - title: Human-readable domain name
- *   - url: Full URL
- *   - domain: Domain only
- *   - created_at: Timestamp
+ *   - id: Primary key (AUTO_INCREMENT)
+ *   - title: Human-readable domain name (VARCHAR(255))
+ *   - url: Full URL (VARCHAR(255))
+ *   - domain: Domain only (VARCHAR(255))
+ *   - created_at: Timestamp (DATETIME DEFAULT CURRENT_TIMESTAMP)
  * 
  * ============================================================================
  * CONFIGURATION CONSTANTS
  * ============================================================================
  * 
  * PSYCHEDELICS.COM CONTENT GUARANTEE:
- * - PSYCHEDELICS_COM_GUARANTEE: Master switch for the guarantee system
- * - PSYCHEDELICS_COM_FALLBACK_ENABLED: Enable fallback search if needed
- * - PSYCHEDELICS_COM_MIN_RESULTS: Minimum results required from psychedelics.com
- * - PSYCHEDELICS_COM_MAX_RESULTS: Maximum results to include
- * - PSYCHEDELICS_COM_MIN_RELEVANCE: Minimum relevance score (0.0-1.0)
+ * - PSYCHEDELICS_COM_GUARANTEE: Master switch for the guarantee system (true/false)
+ * - PSYCHEDELICS_COM_FALLBACK_ENABLED: Enable fallback search if needed (true/false)
+ * - PSYCHEDELICS_COM_MIN_RESULTS: Minimum results required from psychedelics.com (3)
+ * - PSYCHEDELICS_COM_MAX_RESULTS: Maximum results to include (5)
+ * - PSYCHEDELICS_COM_MIN_RELEVANCE: Minimum relevance score (0.0-1.0) (0.5)
  * 
  * SEARCH CONFIGURATION:
- * - MAIN_SEARCH_MAX_RESULTS: Maximum results to request from Exa API
- * - MAIN_SEARCH_TARGET_RESULTS: Target results after filtering
+ * - MAIN_SEARCH_MAX_RESULTS: Maximum results to request from Exa API (100)
+ * - MAIN_SEARCH_TARGET_RESULTS: Target results after filtering (80)
+ * 
+ * PERFORMANCE SETTINGS:
+ * - Memory limit: 512M for embedding operations
+ * - Execution timeout: 300 seconds for long-running processes
+ * - Parallel request timeout: 30 seconds for API calls
  * 
  * ============================================================================
  * USAGE EXAMPLES
@@ -132,6 +151,7 @@
  * 
  * SHORTCODE USAGE:
  * [exa_search] - Renders the AI search interface
+ * [parallel_search_test] - Renders test interface for debugging
  * 
  * ADMIN ACCESS:
  * WordPress Admin > AI Trainer - Access to all management tabs
@@ -139,16 +159,21 @@
  * API ENDPOINTS:
  * - /wp-admin/admin-ajax.php?action=exa_query - Search endpoint
  * - /wp-admin/admin-ajax.php?action=openai_stream - OpenAI streaming
+ * - /wp-admin/admin-ajax.php?action=ai_clean_html - HTML cleaning API
  * 
  * ============================================================================
  * SECURITY FEATURES
  * ============================================================================
  * 
  * - WordPress nonce verification for all AJAX operations
- * - Capability checks for admin functions
- * - Input sanitization and validation
+ * - Capability checks for admin functions (manage_options)
+ * - Input sanitization and validation using WordPress functions
  * - SQL injection prevention with prepared statements
- * - XSS protection with proper escaping
+ * - XSS protection with proper escaping (wp_kses_post, esc_html, etc.)
+ * - Off-topic query detection to prevent abuse
+ * - HTML Tidy integration for content sanitization
+ * - Rate limiting considerations for API calls
+ * - Secure file upload handling with type validation
  * 
  * ============================================================================
  * DEPENDENCIES
@@ -162,14 +187,40 @@
  * - smalot/pdfparser: PDF text extraction
  * - vlucas/phpdotenv: Environment variable management
  * - graham-campbell/result-type: Result handling utilities
+ * - tinymce/tinymce: Rich text editor
  * 
  * WORDPRESS REQUIREMENTS:
  * - WordPress 5.0+
  * - PHP 7.4+
  * - MySQL 5.6+
+ * - cURL extension (recommended for optimal performance)
+ * - HTML Tidy extension (optional, for enhanced HTML cleaning)
+ * 
+ * ============================================================================
+ * PERFORMANCE OPTIMIZATIONS
+ * ============================================================================
+ * 
+ * - Parallel API execution using cURL multi-handle
+ * - Database indexing for faster queries
+ * - Embedding caching and normalization
+ * - Smart batching for domain searches
+ * - Early filtering and threshold optimization
+ * - Memory management for large operations
+ * - Request timeout handling and fallbacks
+ * 
+ * ============================================================================
+ * ERROR HANDLING
+ * ============================================================================
+ * 
+ * - Comprehensive try-catch blocks for all operations
+ * - Detailed error logging for debugging
+ * - Graceful fallbacks for API failures
+ * - User-friendly error messages
+ * - Performance monitoring and logging
+ * - Database error recovery mechanisms
  * 
  * @package AI_Trainer
- * @version 1.0
+ * @version 1.1
  * @author Psychedelic
  * @since 2025
  * @license GPL v2 or later
@@ -177,6 +228,7 @@
  * @see https://exa.ai/ - Neural search API
  * @see https://openai.com/ - AI embeddings and processing
  * @see https://psychedelics.com/ - Primary content source
+ * @see https://wordpress.org/ - WordPress platform
  */
 
 if (!defined('ABSPATH')) exit;

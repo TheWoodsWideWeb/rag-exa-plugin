@@ -1,33 +1,84 @@
 {
     "name": "ai-trainer",
-    "version": "1.0.0",
-    "description": "AI-powered knowledge base training system for WordPress with Exa.ai and OpenAI integration",
+    "version": "1.1.0",
+    "description": "Advanced AI-powered knowledge base training system for WordPress with Exa.ai neural search and OpenAI integration for psychedelic substance information research and education",
     "main": "index.js",
+    "homepage": "https://github.com/samnguyen92/rag-exa-plugin",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/samnguyen92/rag-exa-plugin.git"
+    },
+    "bugs": {
+        "url": "https://github.com/samnguyen92/rag-exa-plugin/issues"
+    },
     "scripts": {
         "build": "wp-scripts build src/index.js",
         "start": "wp-scripts start src/index.js",
         "format": "wp-scripts format",
         "lint:css": "wp-scripts lint-style",
         "lint:js": "wp-scripts lint-js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "npm run start",
+        "prod": "npm run build",
+        "clean": "rm -rf build/ node_modules/",
+        "install-deps": "npm install && composer install"
     },
     "keywords": [
         "wordpress",
+        "wordpress-plugin",
         "ai",
+        "artificial-intelligence",
         "machine-learning",
         "knowledge-base",
         "openai",
         "exa-ai",
         "rag",
-        "embeddings"
+        "retrieval-augmented-generation",
+        "embeddings",
+        "semantic-search",
+        "psychedelics",
+        "substance-education",
+        "research-tools",
+        "neural-search",
+        "content-management",
+        "chatbot",
+        "ai-assistant"
     ],
-    "author": "Psychedelic",
+    "author": {
+        "name": "Psychedelic",
+        "email": "info@psychedelics.com",
+        "url": "https://psychedelics.com"
+    },
+    "contributors": [
+        {
+            "name": "Sam Nguyen",
+            "email": "sam@psychedelics.com"
+        }
+    ],
     "license": "GPL-2.0-or-later",
+    "engines": {
+        "node": ">=14.0.0",
+        "npm": ">=6.0.0"
+    },
+    "browserslist": [
+        "extends @wordpress/browserslist-config"
+    ],
     "devDependencies": {
         "@wordpress/icons": "^9.21.0",
         "@wordpress/prettier-config": "^2.14.0",
         "@wordpress/scripts": "^27.7.0",
         "npm-run-all": "^4.1.5",
         "sass": "~1.26.11"
+    },
+    "dependencies": {},
+    "peerDependencies": {
+        "wordpress": ">=5.0.0"
+    },
+    "config": {
+        "wp-scripts": {
+            "build": {
+                "outputPath": "build"
+            }
+        }
     }
 }
